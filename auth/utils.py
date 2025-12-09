@@ -16,8 +16,13 @@ def get_password_hash(password):
 def verify_password(actual_password,hashed_password):
     return pwd_context.verify(actual_password,hashed_password)
 
-def create_access_token(id):
-    encode={'id':id}
+def create_access_token(id,expires_time_delta):
+    
+    if expires_time_delta:
+        expire=datetime.now()+expires_time_delta
+    else:
+        expire=datetime.now()+timedelta(minutes=ACCESS_TOKEN_EXPIRY_DURATION)
+    encode={'id':id,"exp":expire}
     return jwt.encode(encode,SECRET_KEY,algorithm=ALGORITHM)
 
 def decode_access_token(token):

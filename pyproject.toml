@@ -1,0 +1,6 @@
+[project]
+name="task_board"
+version="0.1.0"
+
+[tool.setuptools]
+packages=["auth","db"]
