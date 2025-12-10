@@ -4,7 +4,7 @@ from jose import JWTError
 from datetime import timedelta
 from fastapi import APIRouter,status,Depends,HTTPException,Security
 from fastapi.security import OAuth2PasswordRequestForm,OAuth2PasswordBearer
-from .schemas import UserOut,UserCreate,Token,UserOut
+from .schemas import UserOut,UserCreate,Token,UserOut,UserLogin
 from sqlalchemy.orm import Session
 from .utils import verify_password,get_password_hash,decode_access_token,create_access_token,ACCESS_TOKEN_EXPIRY_DURATION
 from db.models import User
@@ -51,6 +51,18 @@ def login_for_access_token(form_data:OAuth2PasswordRequestForm=Depends(),db:Sess
     access_token=create_access_token(user.id,expires)
 
     return {"access_token":access_token,"token_type":"Bearer"}
+
+@router.post("/token_json",response_model=Token)
+def get_access_token_json(user_in:UserLogin,db:Session=Depends(get_db)):
+    user=authenticate_user(db,user_in.email,user_in.password)
+    if not user:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,detail="couldn't validate credentials")
+    expires=timedelta(minutes=ACCESS_TOKEN_EXPIRY_DURATION)
+    access_token=create_access_token(user.id,expires)
+
+    return {"access_token":access_token,"token_type":"Bearer"}
+
+
 
 def get_current_user(token:str=Depends(oauth2_scheme),db:Session=Depends(get_db))->User:
     credentials_exception = HTTPException(
