@@ -1,10 +1,10 @@
-from ..main import app
+from task_board.main import app
 from sqlalchemy.orm import sessionmaker
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
 import os
 from db.models import *
-from auth.auth import get_db
+from routers.auth import get_db
 import pytest
 import tempfile
 

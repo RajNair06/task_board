@@ -4,31 +4,19 @@ from jose import JWTError
 from datetime import timedelta
 from fastapi import APIRouter,status,Depends,HTTPException,Security
 from fastapi.security import OAuth2PasswordRequestForm,OAuth2PasswordBearer
-from .schemas import UserOut,UserCreate,Token,UserOut,UserLogin
+from task_board.schemas.auth_schemas import UserOut,UserCreate,Token,UserOut,UserLogin
 from sqlalchemy.orm import Session
-from .utils import verify_password,get_password_hash,decode_access_token,create_access_token,ACCESS_TOKEN_EXPIRY_DURATION
+from task_board.utils.auth_utils import verify_password,get_db,get_user_by_email,authenticate_user,get_password_hash,decode_access_token,create_access_token,ACCESS_TOKEN_EXPIRY_DURATION
 from db.models import User
 
 router=APIRouter(prefix="/auth",tags=["auth"])
 oauth2_scheme=OAuth2PasswordBearer(tokenUrl="/auth/token")
 
-def get_db():
-    db=SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
 
-def get_user_by_email(db:Session,email:str):
-    return db.query(User).filter(User.email==email).first()
 
-def authenticate_user(db:Session,email:str,password:str):
-    user=get_user_by_email(db,email)
-    if not user:
-        return None
-    if not verify_password(password,user.password_hash):
-        return None
-    return user
+
+
+
 
 @router.post('/register',response_model=UserOut,status_code=status.HTTP_201_CREATED)
 def register(user_in:UserCreate,db:Session=Depends(get_db)):

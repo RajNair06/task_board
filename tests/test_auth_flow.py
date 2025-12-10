@@ -1,5 +1,5 @@
 import pytest
-from auth.utils import get_password_hash,create_access_token
+from utils.auth_utils import get_password_hash,create_access_token
 from datetime import timedelta
 from db.models import User
 
@@ -49,7 +49,7 @@ def test_missing_token_protected(client):
 
 
 def test_expired_token(client,db_session):
-    from auth.utils import ACCESS_TOKEN_EXPIRY_DURATION
+    from utils.auth_utils import ACCESS_TOKEN_EXPIRY_DURATION
     hashed=get_password_hash("pw")
     user = User(email="expired@example.com", password_hash=hashed,name="rando")
     db_session.add(user)
