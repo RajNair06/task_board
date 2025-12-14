@@ -3,14 +3,14 @@ from jose import JWTError
 
 from datetime import timedelta
 from fastapi import APIRouter,status,Depends,HTTPException,Security
-from fastapi.security import OAuth2PasswordRequestForm,OAuth2PasswordBearer
+from fastapi.security import OAuth2PasswordRequestForm
 from task_board.schemas.auth_schemas import UserOut,UserCreate,Token,UserOut,UserLogin
 from sqlalchemy.orm import Session
-from task_board.utils.auth_utils import verify_password,get_db,get_user_by_email,authenticate_user,get_password_hash,decode_access_token,create_access_token,ACCESS_TOKEN_EXPIRY_DURATION
+from task_board.utils.auth_utils import verify_password,get_db,get_user_by_email,authenticate_user,get_password_hash,decode_access_token,create_access_token,ACCESS_TOKEN_EXPIRY_DURATION,get_current_user
 from db.models import User
 
 router=APIRouter(prefix="/auth",tags=["auth"])
-oauth2_scheme=OAuth2PasswordBearer(tokenUrl="/auth/token")
+
 
 
 
@@ -52,24 +52,7 @@ def get_access_token_json(user_in:UserLogin,db:Session=Depends(get_db)):
 
 
 
-def get_current_user(token:str=Depends(oauth2_scheme),db:Session=Depends(get_db))->User:
-    credentials_exception = HTTPException(
-        status_code=status.HTTP_401_UNAUTHORIZED,
-        detail="Could not validate credentials",
-        headers={"WWW-Authenticate": "Bearer"},
-    )
-    try:
-        payload=decode_access_token(token)
-        user_id=int(payload.get("id"))
-        if user_id is None:
-            raise credentials_exception
-    except JWTError:
-        raise credentials_exception
-    
-    user=db.query(User).get(user_id)
-    if not user:
-        raise credentials_exception
-    return user
+
 
 @router.get("/me",response_model=UserOut)
 def read_own_profile(current_user:User=Depends(get_current_user)):

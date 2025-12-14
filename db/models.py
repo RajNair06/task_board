@@ -24,8 +24,8 @@ class Board(Base):
     name=Column(String,nullable=False)
     description=Column(Text,nullable=True)
     created_at=Column(DateTime,default=datetime.now())
-    created_by=Column(Integer,ForeignKey("users.id"),primary_key=True)
-    updated_at=Column(DateTime,onupdate=datetime.now())
+    created_by=Column(Integer,ForeignKey("users.id"),nullable=False)
+    updated_at=Column(DateTime,onupdate=datetime.now(),default=datetime.now())
 
 
 class BoardRole(enum.Enum):
