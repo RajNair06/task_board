@@ -4,9 +4,12 @@ from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
 import os
 from db.models import *
-from routers.auth import get_db
+
+from task_board.utils.auth_utils import get_password_hash,get_db
 import pytest
 import tempfile
+print("get_db id:", id(get_db))
+
 
 @pytest.fixture(scope="session")
 def db_file():
@@ -21,7 +24,9 @@ def db_file():
 @pytest.fixture(scope="session")
 def test_engine(db_file):
     url=f"sqlite:///{db_file}"
-    engine=create_engine(url)
+    engine=create_engine(url,
+    connect_args={"check_same_thread": False}
+)
     Base.metadata.create_all(bind=engine)
     yield engine
     engine.dispose()
@@ -40,17 +45,40 @@ def db_session(TestSessionLocal):
 
 @pytest.fixture
 def client(db_session):
+    print("get_db id:", id(get_db))
+
     def override_get_db():
-        
-        try:
-            yield db_session
-        finally:
-            pass
-    
-    app.dependency_overrides[get_db]=override_get_db
+        yield db_session
+
+    app.dependency_overrides[get_db] = override_get_db
 
     with TestClient(app) as c:
         yield c
-    
-    app.dependency_overrides.pop(get_db,None)
 
+    app.dependency_overrides.clear()
+
+
+
+@pytest.fixture
+def user_setup(client, db_session):
+    user = db_session.query(User).filter_by(email="bob@example.com").first()
+
+    if not user:
+        hashed = get_password_hash("secretpw")
+        user = User(
+            email="bob@example.com",
+            password_hash=hashed,
+            name="Bob"
+        )
+        db_session.add(user)
+        db_session.commit()
+        db_session.refresh(user)
+
+    response = client.post(
+        "/auth/token_json",
+        json={"email": "bob@example.com", "password": "secretpw"}
+    )
+
+    assert response.status_code == 200
+    token = response.json()["access_token"]
+    return token

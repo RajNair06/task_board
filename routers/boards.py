@@ -2,7 +2,7 @@ from routers.auth import get_current_user
 from schemas.boards_schemas import BoardCreate,BoardOut,BoardUpdate,DeleteBoardResponse
 from sqlalchemy.orm import Session
 from db.models import User,Board
-from utils.auth_utils import get_current_user,get_db
+from task_board.utils.auth_utils import get_current_user,get_db
 from fastapi import APIRouter,Depends,HTTPException
 
 router=APIRouter(tags=["boardfroms"])
