@@ -5,7 +5,7 @@ from db.models import User,Board
 from task_board.utils.auth_utils import get_current_user,get_db
 from fastapi import APIRouter,Depends,HTTPException
 
-router=APIRouter(tags=["boardfroms"])
+router=APIRouter(tags=["boards"])
 
 @router.post('/boards',response_model=BoardOut)
 def create_board(board_data:BoardCreate,current_user:User=Depends(get_current_user),db:Session=Depends(get_db)):
@@ -32,7 +32,7 @@ def update_board(id:int,board_update:BoardUpdate,db:Session=Depends(get_db),curr
         board.name=board_update.name
     if board_update.description:
         board.description=board_update.description
-
+    db.commit()
     return board
 
 @router.delete("/boards/{id}")
