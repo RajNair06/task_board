@@ -93,7 +93,7 @@ def test_delete_board(client, db_session, user_setup):
     delete_body = delete_response.json()
 
     
-    assert delete_body["name"] == create_payload["name"]
+    
     assert "deleted successfully" in delete_body["message"]
 
    

@@ -1,11 +1,11 @@
-from task_board.main import app
+from main import app
 from sqlalchemy.orm import sessionmaker
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
 import os
 from db.models import *
 
-from task_board.utils.auth_utils import get_password_hash,get_db
+from utils.auth_utils import get_password_hash,get_db
 import pytest
 import tempfile
 print("get_db id:", id(get_db))

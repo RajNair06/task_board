@@ -4,11 +4,11 @@ from jose import JWTError
 from datetime import timedelta
 from fastapi import APIRouter,status,Depends,HTTPException,Security
 from fastapi.security import OAuth2PasswordRequestForm
-from task_board.schemas.auth_schemas import UserOut,UserCreate,Token,UserOut,UserLogin
+from schemas.auth_schemas import UserOut,UserCreate,Token,UserOut,UserLogin
 from sqlalchemy.orm import Session
-from task_board.utils.auth_utils import verify_password,get_db,get_user_by_email,authenticate_user,get_password_hash,decode_access_token,create_access_token,ACCESS_TOKEN_EXPIRY_DURATION,get_current_user
+from utils.auth_utils import verify_password,get_db,get_user_by_email,authenticate_user,get_password_hash,decode_access_token,create_access_token,ACCESS_TOKEN_EXPIRY_DURATION,get_current_user
 from db.models import User
-print("get_db id:", id(get_db))
+
 
 
 router=APIRouter(prefix="/auth",tags=["auth"])
