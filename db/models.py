@@ -1,4 +1,4 @@
-from sqlalchemy.orm import declarative_base
+from sqlalchemy.orm import declarative_base,relationship
 from sqlalchemy import Column,Integer,DateTime,func,String,ForeignKey,Enum,Index,Text,Numeric,Boolean
 import enum
 
@@ -14,6 +14,8 @@ class User(Base):
     password_hash=Column(String,nullable=False)
     created_at=Column(DateTime,default=datetime.now())
     updated_at=Column(DateTime,onupdate=datetime.now())
+    boards=relationship("BoardMembers",back_populates="user")
+
 
     def __repr__(self):
         return f"{self.name}->{self.email}"
@@ -26,11 +28,11 @@ class Board(Base):
     created_at=Column(DateTime,default=datetime.now())
     created_by=Column(Integer,ForeignKey("users.id"),nullable=False)
     updated_at=Column(DateTime,onupdate=datetime.now(),default=datetime.now())
+    members=relationship("BoardMembers",back_populates="board",cascade="all,delete-orphan",passive_deletes=True)
 
 
 class BoardRole(enum.Enum):
     owner = "owner"
-    admin = "admin"
     editor = "editor"
     viewer = "viewer"
 
@@ -41,9 +43,10 @@ class BoardMembers(Base):
     board_id=Column(Integer,ForeignKey("boards.id"),primary_key=True)
     role = Column(
         Enum(BoardRole, name="board_role_enum", create_constraint=True),
-        nullable=False,
-        default=BoardRole.editor
+        nullable=False
     )
+    user=relationship("User",back_populates="boards")
+    board=relationship("Board",back_populates="members")
 
 
 class Card(Base):

@@ -1,11 +1,11 @@
 from routers.auth import get_current_user
-from schemas.boards_schemas import BoardCreate,BoardOut,BoardUpdate,DeleteBoardResponse
-from commands.boards import CreateBoardCommand,UpdateBoardCommand,DeleteBoardCommand
-from queries.boards import GetBoardQuery,ListBoardsQuery
+from schemas.boards_schemas import BoardCreate,BoardOut,BoardUpdate,DeleteBoardResponse,AddMemberModel,UpdateMemberModel,BoardMemberResponse
+from commands.boards import CreateBoardCommand,UpdateBoardCommand,DeleteBoardCommand,AddBoardMemberCommand,UpdateBoardMemberRoleCommand,RemoveBoardMemberCommand
+from queries.boards import GetBoardQuery,ListBoardsQuery,ListAccessibleBoardsQuery
 from queries.handlers import BoardQueryHandler
-from commands.handlers import BoardCommandHandler
+from commands.handlers import BoardCommandHandler,BoardMemberHandler
 from sqlalchemy.orm import Session
-from db.models import User,Board
+from db.models import User,Board,BoardMembers
 from utils.auth_utils import get_current_user,get_db
 from fastapi import APIRouter,Depends,HTTPException
 
@@ -24,7 +24,7 @@ def get_board(id:int,db:Session=Depends(get_db),current_user:User=Depends(get_cu
 
 @router.get("/boards")
 def list_boards(db:Session=Depends(get_db),current_user:User=Depends(get_current_user)):
-    query=ListBoardsQuery(current_user.id)
+    query=ListAccessibleBoardsQuery(current_user.id)
     return BoardQueryHandler(db).handle(query)
 
 @router.patch("/boards/{id}",response_model=BoardOut)
@@ -38,7 +38,23 @@ def delete_board(id:int,db:Session=Depends(get_db),current_user:User=Depends(get
     BoardCommandHandler(db).handle(command)
     return {"message": "Board deleted successfully"}
     
-    
+@router.post("/boards/{board_id}/members",response_model=BoardMemberResponse)
+def add_member(board_id:int,payload:AddMemberModel,db:Session=Depends(get_db),current_user:User=Depends(get_current_user)):
+    command=AddBoardMemberCommand(board_id=board_id,owner_id=current_user.id,target_user_id=payload.user_id,role=payload.role)
+    return BoardMemberHandler(db).handle(command)
+
+@router.patch('/boards/{board_id}/members/{user_id}',response_model=BoardMemberResponse)
+def change_role(board_id:int,user_id:int,payload:UpdateMemberModel,db:Session=Depends(get_db),current_user:User=Depends(get_current_user)):
+    command=UpdateBoardMemberRoleCommand(board_id=board_id,owner_id=current_user.id,target_user_id=user_id,new_role=payload.role)
+    return BoardCommandHandler(db).handle(command)
+
+@router.delete("/boards/{board_id}/members/{user_id}")
+def remove_member(board_id:int,user_id:int,db:Session=Depends(get_db),current_user:User=Depends(get_current_user)):
+    command=RemoveBoardMemberCommand(board_id=board_id,owner_id=current_user.id,target_user_id=user_id)
+    BoardCommandHandler(db).handle(command)
+    return {"message":"member removed"}
+
+
     
 
 
