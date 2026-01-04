@@ -43,6 +43,14 @@ def db_session(TestSessionLocal):
     finally:
         session.close()
 
+@pytest.fixture(autouse=True)
+def clean_database(db_session):
+    yield
+    meta=Base.metadata
+    for table in reversed(meta.sorted_tables):
+        db_session.execute(table.delete())
+    db_session.commit()
+
 @pytest.fixture
 def client(db_session):
     print("get_db id:", id(get_db))
@@ -82,3 +90,54 @@ def user_setup(client, db_session):
     assert response.status_code == 200
     token = response.json()["access_token"]
     return token
+
+@pytest.fixture
+def member_user_setup(client, db_session):
+    user = db_session.query(User).filter_by(email="sarah@example.com").first()
+
+    if not user:
+        hashed = get_password_hash("secretpw")
+        user = User(
+            email="sarah@example.com",
+            password_hash=hashed,
+            name="Sarah"
+        )
+        db_session.add(user)
+        db_session.commit()
+        db_session.refresh(user)
+
+    response = client.post(
+        "/auth/token_json",
+        json={"email": "sarah@example.com", "password": "secretpw"}
+    )
+
+
+    assert response.status_code == 200
+    
+    user = db_session.query(User).filter_by(email="sarah@example.com").first()
+    return user.id
+@pytest.fixture
+def other_user_setup(client, db_session):
+    """Fixture for a third user to test non-member permissions."""
+    user = db_session.query(User).filter_by(email="alice@example.com").first()
+
+    if not user:
+        hashed = get_password_hash("secretpw")
+        user = User(
+            email="alice@example.com",
+            password_hash=hashed,
+            name="Alice"
+        )
+        db_session.add(user)
+        db_session.commit()
+        db_session.refresh(user)
+
+    response = client.post(
+        "/auth/token_json",
+        json={"email": "alice@example.com", "password": "secretpw"}
+    )
+
+    assert response.status_code == 200
+    
+    user = db_session.query(User).filter_by(email="alice@example.com").first()
+    return user.id

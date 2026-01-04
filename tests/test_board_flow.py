@@ -99,3 +99,90 @@ def test_delete_board(client, db_session, user_setup):
    
     board = db_session.get(Board, board_id)
     assert board is None, "Board should be removed from database"
+
+
+def test_add_member(client,db_session,user_setup,member_user_setup):
+    token = user_setup
+
+    
+    create_payload = {
+        "name": "sample board",
+        "description": "Temporary board"
+    }
+
+    create_response = client.post(
+        "/boards",
+        headers={"Authorization": f"Bearer {token}"},
+        json=create_payload
+    )
+    board_id=int(create_response.json()["id"])
+    member_id=member_user_setup
+    payload={
+        "user_id":member_id,"role":"editor"
+    }
+    add_member_response=client.post(f"/boards/{board_id}/members",
+        headers={"Authorization": f"Bearer {token}"},json=payload)
+    assert add_member_response.status_code==200
+
+
+def test_remove_member(client,db_session,user_setup,member_user_setup):
+    token = user_setup
+
+    
+    create_payload = {
+        "name": "sample board",
+        "description": "Temporary board"
+    }
+
+    create_response = client.post(
+        "/boards",
+        headers={"Authorization": f"Bearer {token}"},
+        json=create_payload
+    )
+    board_id=int(create_response.json()["id"])
+    member_id=member_user_setup
+    payload={
+        "user_id":member_id,"role":"editor"
+    }
+    add_member_response=client.post(f"/boards/{board_id}/members",
+        headers={"Authorization": f"Bearer {token}"},json=payload)
+    
+    delete_member_response=client.delete(f"/boards/{board_id}/members/{add_member_response.json()["user_id"]}",
+        headers={"Authorization": f"Bearer {token}"})
+    print(delete_member_response.json())
+    assert delete_member_response.status_code==200
+
+
+def test_update_member(client,db_session,user_setup,member_user_setup):
+    token = user_setup
+
+    
+    create_payload = {
+        "name": "sample board",
+        "description": "Temporary board"
+    }
+
+    create_response = client.post(
+        "/boards",
+        headers={"Authorization": f"Bearer {token}"},
+        json=create_payload
+    )
+    board_id=int(create_response.json()["id"])
+    member_id=member_user_setup
+    payload={
+        "user_id":member_id,"role":"editor"
+    }
+    add_member_response=client.post(f"/boards/{board_id}/members",
+        headers={"Authorization": f"Bearer {token}"},json=payload)
+    print(add_member_response.json())
+    payload={
+        "role":"viewer"
+    }
+    try:
+         update_member_role=client.patch(f"/boards/{board_id}/members/{member_id}",headers={"Authorization": f"Bearer {token}"},json=payload)
+         print(update_member_role.json())
+    except Exception as e:
+        print(e)
+    assert update_member_role.status_code==200
+
+

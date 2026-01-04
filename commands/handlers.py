@@ -125,6 +125,13 @@ class BoardMemberHandler:
     def handle(self,command):
         if isinstance(command,AddBoardMemberCommand):
             return self._add_member(command)
+        if isinstance(command,RemoveBoardMemberCommand):
+            return self._remove_member(command)
+        
+        if isinstance(command,UpdateBoardMemberRoleCommand):
+            return self._update_role(command)
+        
+        
     
     def _require_owner(self,board_id,user_id):
         BoardPermissionService.require_role(db=self.db,board_id=board_id,user_id=user_id,allowed_roles={BoardRole.owner})
@@ -146,7 +153,7 @@ class BoardMemberHandler:
 
     def _remove_member(self,command:RemoveBoardMemberCommand):
         self._require_owner(command.board_id,command.owner_id)
-        membership=(self.db.query(BoardMembers).filter(BoardMembers.board_id==command.board_id).first())
+        membership=(self.db.query(BoardMembers).filter(BoardMembers.board_id==command.board_id,BoardMembers.user_id==command.target_user_id).first())
         if not membership:
             raise HTTPException(400,"member not found")
 
@@ -166,6 +173,7 @@ class BoardMemberHandler:
         
         membership.role=command.new_role
         self.db.commit()
+        self.db.refresh(membership)
         return membership
 
 

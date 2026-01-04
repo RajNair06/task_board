@@ -46,12 +46,12 @@ def add_member(board_id:int,payload:AddMemberModel,db:Session=Depends(get_db),cu
 @router.patch('/boards/{board_id}/members/{user_id}',response_model=BoardMemberResponse)
 def change_role(board_id:int,user_id:int,payload:UpdateMemberModel,db:Session=Depends(get_db),current_user:User=Depends(get_current_user)):
     command=UpdateBoardMemberRoleCommand(board_id=board_id,owner_id=current_user.id,target_user_id=user_id,new_role=payload.role)
-    return BoardCommandHandler(db).handle(command)
+    return BoardMemberHandler(db).handle(command)
 
 @router.delete("/boards/{board_id}/members/{user_id}")
 def remove_member(board_id:int,user_id:int,db:Session=Depends(get_db),current_user:User=Depends(get_current_user)):
     command=RemoveBoardMemberCommand(board_id=board_id,owner_id=current_user.id,target_user_id=user_id)
-    BoardCommandHandler(db).handle(command)
+    BoardMemberHandler(db).handle(command)
     return {"message":"member removed"}
 
 
