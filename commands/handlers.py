@@ -65,7 +65,9 @@ class CardCommandHandler:
             return self._delete_card(command)
 
     def _create_card(self,command:CreateCardCommand):
-        board=self.db.query(Board).filter(Board.id==command.board_id,Board.created_by==command.user_id)
+        BoardPermissionService.require_role(self.db,command.board_id,user_id=command.user_id,allowed_roles={BoardRole.owner})
+        board=self.db.query(Board).filter(Board.id==command.board_id)
+        
         if board is None:
             raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -78,7 +80,9 @@ class CardCommandHandler:
         return card
 
     def _update_card(self,command:UpdateCardCommand):
-        board=self.db.query(Board).filter(Board.id==command.board_id,Board.created_by==command.user_id)
+        BoardPermissionService.require_role(self.db,command.board_id,user_id=command.user_id,allowed_roles={BoardRole.owner,BoardRole.editor})
+        board=self.db.query(Board).filter(Board.id==command.board_id)
+        
         if board is None:
             raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -100,12 +104,15 @@ class CardCommandHandler:
         return card
     
     def _delete_card(self,command:DeleteCardCommand):
-        board=self.db.query(Board).filter(Board.id==command.board_id,Board.created_by==command.user_id)
+        BoardPermissionService.require_role(self.db,command.board_id,user_id=command.user_id,allowed_roles={BoardRole.owner})
+        board=self.db.query(Board).filter(Board.id==command.board_id)
+
         if board is None:
             raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Board not found"
         )
+
         card=(self.db.query(Card).filter(Card.id==command.id,Card.board_id==command.board_id).first())
         if card is None:
             raise HTTPException(
