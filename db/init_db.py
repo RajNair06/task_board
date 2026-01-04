@@ -1,5 +1,5 @@
-from database import engine ,SessionLocal
-from models import *
+from .database import engine ,SessionLocal
+from .models import *
 
 def init_db():
     Base.metadata.create_all(bind=engine)

@@ -5,7 +5,7 @@ import os
 from fastapi import Depends,HTTPException,status
 from fastapi.security import OAuth2PasswordBearer
 
-from db.models import User
+from db.models import User,BoardMembers,BoardRole
 from sqlalchemy.orm import Session
 from db.database import SessionLocal
 from dotenv import load_dotenv
@@ -79,3 +79,8 @@ def get_current_user(token:str=Depends(oauth2_scheme),db:Session=Depends(get_db)
 
     
 
+def require_board_role(user_id,board_id,allowed_roles:set[BoardRole],db:Session=Depends(get_db)):
+    member=(db.query(BoardMembers).filter(BoardMembers.user_id==user_id,BoardMembers.board_id==board_id).one_or_none())
+
+    if not member or member.role not in allowed_roles:
+        raise HTTPException(status_code=403,detail="insufficient permission")
