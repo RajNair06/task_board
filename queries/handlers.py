@@ -1,7 +1,7 @@
 from queries.boards import GetBoardQuery,ListBoardsQuery,ListAccessibleBoardsQuery
 from queries.cards import ListCardQuery,GetCardQuery
 from fastapi import HTTPException,status
-from utils.auth_utils import require_board_role
+from utils.permission_utils import BoardPermissionService
 from db.models import Board,Card,BoardMembers,BoardRole
 
 class BoardQueryHandler:
@@ -17,7 +17,7 @@ class BoardQueryHandler:
             return self._list_accessible_boards(query)
      
     def _get_board(self,query:GetBoardQuery):
-        membership=(self.db.query(BoardMembers).filter(BoardMembers.board_id==query.id,Board.created_by==query.user_id).first())
+        membership=(self.db.query(BoardMembers).filter(BoardMembers.board_id==query.id,BoardMembers.created_by==query.user_id).first())
         if not membership:
             raise HTTPException(404,"Board not found")
         board=self.db.query(Board).filter(Board.id==query.id).first()
@@ -45,7 +45,8 @@ class CardQueryHandler:
             return self._list_cards(query)
 
     def _get_card(self,query:GetCardQuery):
-        card=(self.db.query(Card).filter(Card.id==query.id,Card.board_id==query.board_id,Card.created_by==query.user_id).first())
+        BoardPermissionService.require_member(self.db,query.board_id,query.user_id)
+        card=(self.db.query(Card).filter(Card.id==query.id,Card.board_id==query.board_id).first())
         if card is None:
             raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -54,11 +55,12 @@ class CardQueryHandler:
         return card
     
     def _list_cards(self,query:ListCardQuery):
+        BoardPermissionService.require_member(self.db,query.board_id,query.user_id)
         board_exists = (
         self.db.query(Board.id)
         .filter(
             Board.id == query.board_id,
-            Board.created_by == query.user_id
+            
         )
         .first()
         )
@@ -73,8 +75,8 @@ class CardQueryHandler:
         cards = (
         self.db.query(Card)
         .filter(
-            Card.board_id == query.board_id,
-            Card.created_by == query.user_id
+            Card.board_id == query.board_id
+            
         )
         .order_by(Card.position)
         .all()
