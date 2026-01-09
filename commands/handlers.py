@@ -6,6 +6,7 @@ from commands.boards import CreateBoardCommand,UpdateBoardCommand,DeleteBoardCom
 from commands.cards import CreateCardCommand,UpdateCardCommand,DeleteCardCommand
 from commands.boards import AddBoardMemberCommand,UpdateBoardMemberRoleCommand,RemoveBoardMemberCommand
 from tasks.log import log_audit
+from tasks.process import record_activity
 
 class BoardCommandHandler:
     def __init__(self,db):
@@ -29,7 +30,7 @@ class BoardCommandHandler:
         
         self.db.commit()
         self.db.refresh(board)
-        log_audit.delay(actor_id=command.user_id,board_id=board.id,action=AuditAction.BOARD_CREATED,payload={"name":board.name,"description":board.description},)
+        record_activity.delay(actor_id=command.user_id,board_id=board.id,action=AuditAction.BOARD_CREATED,payload={"name":board.name,"description":board.description},)
         return board
     
     def _update_board(self,command:UpdateBoardCommand):
@@ -37,15 +38,16 @@ class BoardCommandHandler:
         board=(self.db.query(Board).filter(Board.id==command.board_id).first())
         if not board:
             raise HTTPException(404,"Board not found")
+        old_name=board.name
+        old_description=board.description
         
         if command.name is not None:
             board.name=command.name
         if command.description is not None:
             board.description=command.description
-        old_name=board.name
-        old_description=board.description
+        
         self.db.commit()
-        log_audit.delay(actor_id=command.user_id,board_id=board.id,action=AuditAction.BOARD_UPDATED,payload={"old":{"name":old_name,"description":old_description},"new":{"name":board.name,"description":board.description},},)
+        record_activity.delay(actor_id=command.user_id,board_id=board.id,action=AuditAction.BOARD_UPDATED,payload={"old":{"name":old_name,"description":old_description},"new":{"name":board.name,"description":board.description},},)
         return board
 
     def _delete_board(self,command:DeleteBoardCommand):
@@ -56,7 +58,7 @@ class BoardCommandHandler:
         
         self.db.delete(board)
         self.db.commit()
-        log_audit.delay(actor_id=command.user_id,board_id=command.board_id,action=AuditAction.BOARD_DELETED,payload=None)
+        record_activity.delay(actor_id=command.user_id,board_id=command.board_id,action=AuditAction.BOARD_DELETED,payload=None)
         return board
 
 class CardCommandHandler:
@@ -84,7 +86,7 @@ class CardCommandHandler:
         self.db.add(card)
         self.db.commit()
         self.db.refresh(card)
-        log_audit.delay(actor_id=command.user_id,board_id=command.board_id,action=AuditAction.CARD_CREATED,payload={
+        record_activity.delay(actor_id=command.user_id,board_id=command.board_id,action=AuditAction.CARD_CREATED,payload={
         "id": card.id,
         "title": card.title,
         "description": card.description,
@@ -119,7 +121,7 @@ class CardCommandHandler:
             card.position=command.position
         
         self.db.commit()
-        log_audit.delay(actor_id=command.user_id,board_id=command.board_id,action=AuditAction.CARD_UPDATED,payload={
+        record_activity.delay(actor_id=command.user_id,board_id=command.board_id,action=AuditAction.CARD_UPDATED,payload={
         "old":{"title":old_title,"description":old_description,"position":float(old_position)},"new":{"title":card.title,"description":card.description,"position":float(card.position)}
     })
         return card
@@ -142,7 +144,7 @@ class CardCommandHandler:
             )
         self.db.delete(card)
         self.db.commit()
-        log_audit.delay(actor_id=command.user_id,board_id=command.board_id,action=AuditAction.CARD_DELETED,payload=None)
+        record_activity.delay(actor_id=command.user_id,board_id=command.board_id,action=AuditAction.CARD_DELETED,payload=None)
         return card
 
 
@@ -179,7 +181,7 @@ class BoardMemberHandler:
         self.db.add(membership)
         self.db.commit()
         print(f"membership.role->{membership.role.value}")
-        log_audit.delay(actor_id=command.owner_id,board_id=command.board_id,action=AuditAction.MEMBER_ADDED,payload={"board_id":command.board_id,"user_id":command.target_user_id,"role":command.role.value})
+        record_activity.delay(actor_id=command.owner_id,board_id=command.board_id,action=AuditAction.MEMBER_ADDED,payload={"board_id":command.board_id,"user_id":command.target_user_id,"role":command.role.value})
         return membership
 
     def _remove_member(self,command:RemoveBoardMemberCommand):
@@ -207,7 +209,7 @@ class BoardMemberHandler:
         membership.role=command.new_role
         self.db.commit()
         self.db.refresh(membership)
-        log_audit.delay(actor_id=command.owner_id,board_id=command.board_id,action=AuditAction.MEMBER_ROLE_CHANGED,payload={"board_id":command.board_id,"user_id":command.target_user_id,"old_role":old_role.value,"new_role":command.new_role.value})
+        record_activity.delay(actor_id=command.owner_id,board_id=command.board_id,action=AuditAction.MEMBER_ROLE_CHANGED,payload={"board_id":command.board_id,"user_id":command.target_user_id,"old_role":old_role.value,"new_role":command.new_role.value})
         return membership
 
 

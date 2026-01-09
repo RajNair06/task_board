@@ -2,7 +2,8 @@ from routers.auth import get_current_user
 from schemas.boards_schemas import BoardCreate,BoardOut,BoardUpdate,DeleteBoardResponse,AddMemberModel,UpdateMemberModel,BoardMemberResponse
 from commands.boards import CreateBoardCommand,UpdateBoardCommand,DeleteBoardCommand,AddBoardMemberCommand,UpdateBoardMemberRoleCommand,RemoveBoardMemberCommand
 from queries.boards import GetBoardQuery,ListBoardsQuery,ListAccessibleBoardsQuery
-from queries.handlers import BoardQueryHandler
+from queries.feed import ActivityFeedQuery
+from queries.handlers import BoardQueryHandler,ActivityQueryHandler
 from commands.handlers import BoardCommandHandler,BoardMemberHandler
 from sqlalchemy.orm import Session
 from db.models import User,Board,BoardMembers
@@ -53,6 +54,11 @@ def remove_member(board_id:int,user_id:int,db:Session=Depends(get_db),current_us
     command=RemoveBoardMemberCommand(board_id=board_id,owner_id=current_user.id,target_user_id=user_id)
     BoardMemberHandler(db).handle(command)
     return {"message":"member removed"}
+
+@router.get("/boards/{board_id}/feed")
+def get_activity_feed(board_id:int,db:Session=Depends(get_db),current_user:User=Depends(get_current_user)):
+    query=ActivityFeedQuery(board_id=board_id,user_id=current_user.id)
+    return ActivityQueryHandler(db).handle(query)
 
 
     

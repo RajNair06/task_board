@@ -90,7 +90,18 @@ class AuditLog(Base):
     action=Column(String,nullable=False)
     payload=Column(JSON,nullable=True)
     created_at=Column(DateTime,default=datetime.now,nullable=False)
-    
+
+class ActivityFeed(Base):
+    __tablename__="activity_feeds"
+    id=Column(Integer,primary_key=True)
+    board_id=Column(Integer,index=True,nullable=False)
+    message=Column(String,nullable=False)
+    actor_id=Column(Integer,ForeignKey("users.id"),nullable=False)
+    activity_type=Column(String,nullable=False)
+    metadata_info=Column(JSON,nullable=True)
+    created_at=Column(DateTime,default=datetime.now)
+
+
 
 
 
