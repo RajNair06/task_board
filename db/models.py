@@ -1,5 +1,5 @@
 from sqlalchemy.orm import declarative_base,relationship
-from sqlalchemy import Column,Integer,DateTime,func,String,ForeignKey,Enum,Index,Text,Numeric,Boolean
+from sqlalchemy import Column,Integer,DateTime,func,String,ForeignKey,Enum,Index,Text,Numeric,Boolean,JSON
 import enum
 
 from datetime import datetime
@@ -39,8 +39,9 @@ class BoardRole(enum.Enum):
 
 class BoardMembers(Base):
     __tablename__="board_members"
-    user_id=Column(Integer,ForeignKey("users.id"),primary_key=True)
-    board_id=Column(Integer,ForeignKey("boards.id"),primary_key=True)
+    id=Column(Integer,primary_key=True)
+    user_id=Column(Integer,ForeignKey("users.id"))
+    board_id=Column(Integer,ForeignKey("boards.id"))
     role = Column(
         Enum(BoardRole, name="board_role_enum", create_constraint=True),
         nullable=False
@@ -69,6 +70,36 @@ class Card(Base):
         onupdate=datetime.now(),
         nullable=False,
     )
+
+class AuditAction:
+    BOARD_CREATED="BOARD_CREATED"
+    BOARD_UPDATED="BOARD_UPDATED"
+    BOARD_DELETED="BOARD_DELETED"
+    CARD_CREATED="CARD_CREATED"
+    CARD_UPDATED="CARD_UPDATED"
+    CARD_DELETED="CARD_DELETED"
+    MEMBER_ADDED="MEMBER_ADDED"
+    MEMBER_REMOVED="MEMBER_REMOVED"
+    MEMBER_ROLE_CHANGED="MEMBER_ROLE_CHANGED"
+
+class AuditLog(Base):
+    __tablename__="audit_logs"
+    id=Column(Integer,primary_key=True)
+    actor_id=Column(Integer,nullable=False)
+    board_id=Column(Integer,nullable=False,index=True)
+    action=Column(String,nullable=False)
+    payload=Column(JSON,nullable=True)
+    created_at=Column(DateTime,default=datetime.now,nullable=False)
+
+class ActivityFeed(Base):
+    __tablename__="activity_feeds"
+    id=Column(Integer,primary_key=True)
+    board_id=Column(Integer,index=True,nullable=False)
+    message=Column(String,nullable=False)
+    actor_id=Column(Integer,ForeignKey("users.id"),nullable=False)
+    activity_type=Column(String,nullable=False)
+    metadata_info=Column(JSON,nullable=True)
+    created_at=Column(DateTime,default=datetime.now)
 
 
 
