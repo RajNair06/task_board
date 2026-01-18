@@ -34,6 +34,13 @@ A FastAPI-based backend for a Trello-like real-time collaborative task board wit
 - Card completion status tracking
 - Card metadata (title, description, timestamps)
 
+### Real-time Collaboration
+
+- WebSocket-based real-time updates for board collaboration
+- Join/leave board rooms for live synchronization
+- Secure WebSocket authentication with JWT tokens
+- Automatic broadcasting of activity feed updates to connected clients
+
 ### Audit & Activity Feed
 
 - Comprehensive audit logging for all board and card operations
@@ -56,12 +63,12 @@ A FastAPI-based backend for a Trello-like real-time collaborative task board wit
 ```
 task_board/
 ├── main.py                 # FastAPI app and lifespan initialization
-├── routers/               # API route definitions (auth, boards, cards)
+├── routers/               # API route definitions (auth, boards, cards, sockets)
 ├── commands/              # Command handlers for business logic operations
 ├── queries/               # Query handlers for data retrieval
 ├── db/                    # SQLAlchemy models and database setup
 ├── schemas/               # Pydantic models for request/response validation
-├── utils/                 # Authentication and permission utilities
+├── utils/                 # Authentication, permissions, and connection utilities
 ├── tasks/                 # Celery async tasks and activity feed
 └── tests/                 # Comprehensive test suite
 ```
@@ -121,20 +128,23 @@ celery -A tasks.celery_config worker --loglevel=info
 - `POST /boards` — Create new board
 - `GET /boards` — List user's accessible boards
 - `GET /boards/{id}` — Get board details
-- `PUT /boards/{id}` — Update board
+- `PATCH /boards/{id}` — Update board
 - `DELETE /boards/{id}` — Delete board
 - `POST /boards/{id}/members` — Add member to board
-- `PUT /boards/{id}/members/{user_id}` — Update member role
+- `PATCH /boards/{id}/members/{user_id}` — Update member role
 - `DELETE /boards/{id}/members/{user_id}` — Remove member from board
+- `GET /boards/{board_id}/feed` — Get board activity feed
 
 ### Cards
 
 - `POST /boards/{board_id}/cards` — Create card
 - `GET /boards/{board_id}/cards` — List board cards
-- `GET /cards/{id}` — Get card details
-- `PUT /cards/{id}` — Update card
-- `DELETE /cards/{id}` — Delete card
+- `GET /boards/{board_id}/cards/{card_id}` — Get card details
+- `PATCH /boards/{board_id}/cards/{card_id}` — Update card
+- `DELETE /boards/{board_id}/cards/{card_id}` — Delete card
 
-### Activity Feed
+### WebSockets
 
-- `GET /boards/{board_id}/activity` — Get board activity feed
+- `WS /ws?token={jwt_token}` — Real-time board collaboration
+  - Send `{"type": "join", "board_id": 123}` to join a board room
+  - Send `{"type": "leave"}` to leave the current board room
