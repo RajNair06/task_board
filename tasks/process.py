@@ -18,7 +18,7 @@ class ActivityMessageBuilder:
         elif audit.action==AuditAction.CARD_UPDATED:
             return f"{name} updated the card with title:{audit.payload["old"]["title"]},desc:{audit.payload["old"]["description"]},position:{audit.payload["old"]["position"]} to title:{audit.payload["new"]["title"]},desc:{audit.payload["new"]["description"]},position:{audit.payload["new"]["position"]}" 
         elif audit.action==AuditAction.MEMBER_ADDED:
-            return f"{name} added a member to the board-{audit.payload["board_id"]} with user id {audit.payload["target_user_id"]} and role {audit.payload["role"]}"
+            return f"{name} added a member to the board-{audit.payload["board_id"]} with user id {audit.payload["user_id"]} and role {audit.payload["role"]}"
         elif audit.action==AuditAction.MEMBER_REMOVED:
             return f"{name} removed a member from the board-{audit.payload["board_id"]} with user id  {audit.payload["user_id"]}"
         elif audit.action==AuditAction.MEMBER_ROLE_CHANGED:
