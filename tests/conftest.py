@@ -8,6 +8,8 @@ from db.models import *
 from utils.auth_utils import get_password_hash,get_db
 import pytest
 import tempfile
+from unittest.mock import patch, MagicMock
+from contextlib import asynccontextmanager
 print("get_db id:", id(get_db))
 
 
@@ -45,25 +47,78 @@ def db_session(TestSessionLocal):
 
 @pytest.fixture(autouse=True)
 def clean_database(db_session):
-    yield
-    meta=Base.metadata
+    """Clean database before each test."""
+    meta = Base.metadata
     for table in reversed(meta.sorted_tables):
         db_session.execute(table.delete())
     db_session.commit()
+
+@pytest.fixture(autouse=True)
+def mock_celery_tasks(db_session):
+    """Mock Celery tasks to run synchronously for testing."""
+    from tasks import process, log
+    import db.database
+    original = db.database.SessionLocal
+    db.database.SessionLocal = lambda: db_session
+    # Also patch in the task modules
+    process.SessionLocal = lambda: db_session
+    log.SessionLocal = lambda: db_session
+    try:
+        with patch.object(process.record_activity, 'delay') as mock_record, \
+             patch.object(log.log_audit, 'delay') as mock_log:
+            # Make delay return a mock that calls the function synchronously
+            def sync_record(*args, **kwargs):
+                process.record_activity(*args, **kwargs)
+                return MagicMock()
+            
+            def sync_log(*args, **kwargs):
+                log.log_audit(*args, **kwargs)
+                return MagicMock()
+            
+            mock_record.side_effect = sync_record
+            mock_log.side_effect = sync_log
+            yield mock_record, mock_log
+    finally:
+        db.database.SessionLocal = original
+
+@pytest.fixture(autouse=True)
+def mock_redis():
+    """Mock Redis clients for testing."""
+    with patch('redis.Redis') as mock_sync_redis, \
+         patch('redis.asyncio.Redis') as mock_async_redis:
+        mock_sync_instance = MagicMock()
+        mock_async_instance = MagicMock()
+        mock_sync_redis.return_value = mock_sync_instance
+        mock_async_redis.from_url.return_value = mock_async_instance
+        mock_async_instance.pubsub.return_value = MagicMock()
+        yield mock_sync_instance, mock_async_instance
 
 @pytest.fixture
 def client(db_session):
     print("get_db id:", id(get_db))
 
+    # Create a test app without lifespan to avoid starting background tasks
+    from fastapi import FastAPI
+    from routers.auth import router as auth_router
+    from routers.boards import router as boards_router
+    from routers.cards import router as cards_router
+    from routers.sockets import router as ws_router
+
+    test_app = FastAPI()
+    test_app.include_router(auth_router)
+    test_app.include_router(boards_router)
+    test_app.include_router(cards_router)
+    test_app.include_router(ws_router)
+
     def override_get_db():
         yield db_session
 
-    app.dependency_overrides[get_db] = override_get_db
+    test_app.dependency_overrides[get_db] = override_get_db
 
-    with TestClient(app) as c:
+    with TestClient(test_app) as c:
         yield c
 
-    app.dependency_overrides.clear()
+    test_app.dependency_overrides.clear()
 
 
 

@@ -29,9 +29,18 @@ class BoardCommandHandler:
         self.db.add(membership)
         
         self.db.commit()
-        self.db.refresh(board)
+        board_id = board.id
+        created_at = board.created_at
+        updated_at = board.updated_at
         record_activity.delay(actor_id=command.user_id,board_id=board.id,action=AuditAction.BOARD_CREATED,payload={"name":board.name,"description":board.description},)
-        return board
+        return {
+            "id": board_id,
+            "name": command.name,
+            "description": command.description,
+            "created_by": command.user_id,
+            "created_at": created_at,
+            "updated_at": updated_at,
+        }
     
     def _update_board(self,command:UpdateBoardCommand):
         BoardPermissionService.require_role(db=self.db,board_id=command.board_id,user_id=command.user_id,allowed_roles={BoardRole.owner,BoardRole.editor})
@@ -47,8 +56,21 @@ class BoardCommandHandler:
             board.description=command.description
         
         self.db.commit()
+        board_id = board.id
+        name = board.name
+        description = board.description
+        created_by = board.created_by
+        created_at = board.created_at
+        updated_at = board.updated_at
         record_activity.delay(actor_id=command.user_id,board_id=board.id,action=AuditAction.BOARD_UPDATED,payload={"old":{"name":old_name,"description":old_description},"new":{"name":board.name,"description":board.description},},)
-        return board
+        return {
+            "id": board_id,
+            "name": name,
+            "description": description,
+            "created_by": created_by,
+            "created_at": created_at,
+            "updated_at": updated_at,
+        }
 
     def _delete_board(self,command:DeleteBoardCommand):
         BoardPermissionService.require_role(db=self.db,board_id=command.board_id,user_id=command.user_id,allowed_roles={BoardRole.owner})
@@ -56,10 +78,11 @@ class BoardCommandHandler:
         if not board:
             raise HTTPException(404,"Board not found")
         
+        name = board.name
         self.db.delete(board)
         self.db.commit()
         record_activity.delay(actor_id=command.user_id,board_id=command.board_id,action=AuditAction.BOARD_DELETED,payload=None)
-        return board
+        return {"name": name}
 
 class CardCommandHandler:
     def __init__(self,db):
@@ -86,6 +109,9 @@ class CardCommandHandler:
         self.db.add(card)
         self.db.commit()
         self.db.refresh(card)
+        card_id = card.id
+        created_at = card.created_at
+        updated_at = card.updated_at
         record_activity.delay(actor_id=command.user_id,board_id=command.board_id,action=AuditAction.CARD_CREATED,payload={
         "id": card.id,
         "title": card.title,
@@ -93,7 +119,17 @@ class CardCommandHandler:
         "position": float(card.position),
         "created_by": card.created_by
     })
-        return card
+        return {
+            "id": card_id,
+            "title": command.title,
+            "description": command.description,
+            "is_complete": False,
+            "board_id": command.board_id,
+            "position": command.position,
+            "created_by": command.user_id,
+            "created_at": created_at,
+            "updated_at": updated_at,
+        }
 
     def _update_card(self,command:UpdateCardCommand):
         BoardPermissionService.require_role(self.db,command.board_id,user_id=command.user_id,allowed_roles={BoardRole.owner,BoardRole.editor})
@@ -121,10 +157,29 @@ class CardCommandHandler:
             card.position=command.position
         
         self.db.commit()
+        card_id = card.id
+        title = card.title
+        description = card.description
+        is_complete = card.is_complete
+        board_id = card.board_id
+        position = card.position
+        created_by = card.created_by
+        created_at = card.created_at
+        updated_at = card.updated_at
         record_activity.delay(actor_id=command.user_id,board_id=command.board_id,action=AuditAction.CARD_UPDATED,payload={
         "old":{"title":old_title,"description":old_description,"position":float(old_position)},"new":{"title":card.title,"description":card.description,"position":float(card.position)}
     })
-        return card
+        return {
+            "id": card_id,
+            "title": title,
+            "description": description,
+            "is_complete": is_complete,
+            "board_id": board_id,
+            "position": position,
+            "created_by": created_by,
+            "created_at": created_at,
+            "updated_at": updated_at,
+        }
     
     def _delete_card(self,command:DeleteCardCommand):
         BoardPermissionService.require_role(self.db,command.board_id,user_id=command.user_id,allowed_roles={BoardRole.owner})
@@ -180,9 +235,12 @@ class BoardMemberHandler:
         membership=BoardMembers(board_id=command.board_id,user_id=command.target_user_id,role=command.role)
         self.db.add(membership)
         self.db.commit()
-        print(f"membership.role->{membership.role.value}")
         record_activity.delay(actor_id=command.owner_id,board_id=command.board_id,action=AuditAction.MEMBER_ADDED,payload={"board_id":command.board_id,"user_id":command.target_user_id,"role":command.role.value})
-        return membership
+        return {
+            "user_id": command.target_user_id,
+            "board_id": command.board_id,
+            "role": command.role,
+        }
 
     def _remove_member(self,command:RemoveBoardMemberCommand):
         self._require_owner(command.board_id,command.owner_id)
@@ -210,7 +268,11 @@ class BoardMemberHandler:
         self.db.commit()
         self.db.refresh(membership)
         record_activity.delay(actor_id=command.owner_id,board_id=command.board_id,action=AuditAction.MEMBER_ROLE_CHANGED,payload={"board_id":command.board_id,"user_id":command.target_user_id,"old_role":old_role.value,"new_role":command.new_role.value})
-        return membership
+        return {
+            "user_id": command.target_user_id,
+            "board_id": command.board_id,
+            "role": command.new_role,
+        }
 
 
     
