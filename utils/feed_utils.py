@@ -1,6 +1,8 @@
 import asyncio
 from db.database import SessionLocal
 from db.models import ActivityFeed
+import redis.asyncio as redis
+import json
 
 last_sent_activity_id: dict[int, int] = {}
 
@@ -48,3 +50,38 @@ async def activity_feed_dispatcher(manager):
 
         finally:
             db.close()
+
+REDIS_URL="redis://localhost:6379/0"
+
+async def redis_listener(manager):
+     client=redis.from_url(REDIS_URL)
+     pubsub=client.pubsub()
+     await pubsub.psubscribe("board:*")
+     print("subscribed to board channel")
+     try:
+        async for message in pubsub.listen():
+            
+            if message is None:
+                    continue
+            msg_type=message.get("type")
+            if msg_type not in ("message","pmessage"):
+                    continue
+            raw_channel=message.get("channel")
+            channel=raw_channel.decode() if isinstance(raw_channel,bytes) else raw_channel
+            raw_data=message.get("data")
+            data=raw_data.decode() if isinstance(raw_data,bytes) else raw_data
+              
+            event=json.loads(data)
+            board_id=int(channel.split(":")[1])
+            await manager.broadcast(board_id,event)
+            
+     
+     except Exception as e:
+        print(e)
+     finally:
+        await pubsub.unsubscribe()
+        await pubsub.close()
+        await client.close()
+                
+
+          

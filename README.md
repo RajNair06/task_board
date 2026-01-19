@@ -40,6 +40,8 @@ A FastAPI-based backend for a Trello-like real-time collaborative task board wit
 - Join/leave board rooms for live synchronization
 - Secure WebSocket authentication with JWT tokens
 - Automatic broadcasting of activity feed updates to connected clients
+- Redis pub/sub integration for cross-instance event propagation
+- Broadcasting mechanism: Redis listener 
 
 ### Audit & Activity Feed
 
@@ -104,6 +106,8 @@ uvicorn main:app --reload
 
 The API will be available at `http://localhost:8000`. OpenAPI docs at `/docs`.
 
+**Note**: Ensure Redis is running on localhost:6379 for real-time activity broadcasting to work correctly.
+
 ### Running Tests
 
 ```bash
@@ -148,3 +152,19 @@ celery -A tasks.celery_config worker --loglevel=info
 - `WS /ws?token={jwt_token}` — Real-time board collaboration
   - Send `{"type": "join", "board_id": 123}` to join a board room
   - Send `{"type": "leave"}` to leave the current board room
+  - Receive activity updates with type `activity` containing board events
+
+## Real-time Broadcasting Architecture
+
+### Broadcasting Mechanisms
+
+ **Redis Pub/Sub Listener**: Async listener that subscribes to `board:*` channels and broadcasts messages to connected WebSocket clients in real-time.
+
+
+### Event Flow
+
+1. Action triggered (board/card creation, update, etc.)
+2. Celery task records audit log and activity feed entry
+3. Event published to Redis: `redis_client.publish(f"board:{board_id}", json.dumps(payload))`
+4. Redis listener receives and broadcasts to WebSocket clients
+
