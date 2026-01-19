@@ -1,6 +1,11 @@
 from db.models import AuditLog,AuditAction,ActivityFeed,User
 from db.database import SessionLocal
 from .celery_config import celery_app
+import  redis
+import json
+
+redis_client=redis.Redis(host="localhost",port=6379)
+
 
 class ActivityMessageBuilder:
     @staticmethod
@@ -38,7 +43,12 @@ def record_activity(actor_id:int,board_id:int,action,payload):
         feed=ActivityFeed(board_id=board_id,actor_id=actor_id,activity_type=action,message=message,metadata_info=payload)
         db.add(feed)
         db.commit()
-    except Exception:
+        db.refresh(feed)
+        redis_payload={"type": "activity", "activity_id":feed.id,"board_id":feed.board_id,"actor_id":feed.actor_id,"activity_type":feed.activity_type,"message":feed.message,"created_at":feed.created_at.isoformat()}
+        channel=f"board:{feed.board_id}"
+        redis_client.publish(channel,json.dumps(redis_payload))
+    except Exception as e:
+        print(e)
         db.rollback()
         raise
     finally:
