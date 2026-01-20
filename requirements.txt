@@ -53,7 +53,7 @@ shellingham==1.5.4
 six==1.17.0
 SQLAlchemy==2.0.44
 starlette==0.50.0
--e git+ssh://git@github.com/RajNair06/task_board.git@56df3a42d70921647e2990749846f6d8d096ebef#egg=task_board
+
 typer==0.20.0
 typing-inspection==0.4.2
 typing_extensions==4.15.0

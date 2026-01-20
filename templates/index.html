@@ -1,0 +1,162 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Task Board API Documentation</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        line-height: 1.6;
+        margin: 0;
+        padding: 20px;
+        background-color: #f4f4f4;
+      }
+      .container {
+        max-width: 800px;
+        margin: auto;
+        background: white;
+        padding: 20px;
+        border-radius: 8px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+      }
+      h1,
+      h2 {
+        color: #333;
+      }
+      h1 {
+        text-align: center;
+      }
+      .section {
+        margin-bottom: 20px;
+      }
+      .route {
+        background: #e9ecef;
+        padding: 10px;
+        margin: 5px 0;
+        border-left: 4px solid #007bff;
+      }
+      .method {
+        font-weight: bold;
+        color: #007bff;
+      }
+      .description {
+        margin-top: 10px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>Task Board API</h1>
+      <p>
+        Welcome to the Task Board API documentation. This API allows you to
+        manage task boards, cards, and real-time updates via WebSockets.
+      </p>
+
+      <div class="section">
+        <h2>Authentication</h2>
+        <p>
+          Before using the API, you need to authenticate. Register a new user or
+          login to get a token.
+        </p>
+        <div class="route">
+          <span class="method">POST</span> /auth/register - Register a new user
+        </div>
+        <div class="route">
+          <span class="method">POST</span> /auth/login - Login and get access
+          token
+        </div>
+        <p class="description">
+          Use the access token in the Authorization header for subsequent
+          requests: <code>Authorization: Bearer {token}</code>
+        </p>
+      </div>
+
+      <div class="section">
+        <h2>Boards</h2>
+        <p>Manage your task boards. Create, update, delete, and list boards.</p>
+        <div class="route">
+          <span class="method">GET</span> /boards - List all boards
+        </div>
+        <div class="route">
+          <span class="method">POST</span> /boards - Create a new board
+        </div>
+        <div class="route">
+          <span class="method">GET</span> /boards/{board_id} - Get board details
+        </div>
+        <div class="route">
+          <span class="method">PUT</span> /boards/{board_id} - Update board
+        </div>
+        <div class="route">
+          <span class="method">DELETE</span> /boards/{board_id} - Delete board
+        </div>
+        <div class="route">
+          <span class="method">POST</span> /boards/{board_id}/members - Add
+          member to board
+        </div>
+        <div class="route">
+          <span class="method">PUT</span> /boards/{board_id}/members/{user_id} -
+          Update member role
+        </div>
+        <div class="route">
+          <span class="method">DELETE</span>
+          /boards/{board_id}/members/{user_id} - Remove member
+        </div>
+      </div>
+
+      <div class="section">
+        <h2>Cards</h2>
+        <p>Manage cards within boards. Each card belongs to a board.</p>
+        <div class="route">
+          <span class="method">GET</span> /boards/{board_id}/cards - List cards
+          in a board
+        </div>
+        <div class="route">
+          <span class="method">POST</span> /boards/{board_id}/cards - Create a
+          new card
+        </div>
+        <div class="route">
+          <span class="method">GET</span> /boards/{board_id}/cards/{card_id} -
+          Get card details
+        </div>
+        <div class="route">
+          <span class="method">PUT</span> /boards/{board_id}/cards/{card_id} -
+          Update card
+        </div>
+        <div class="route">
+          <span class="method">DELETE</span> /boards/{board_id}/cards/{card_id}
+          - Delete card
+        </div>
+      </div>
+
+      <div class="section">
+        <h2>Real-time Updates</h2>
+        <p>Connect via WebSocket for real-time activity feeds.</p>
+        <div class="route">
+          <span class="method">WebSocket</span> /ws/{board_id} - Connect to
+          board's real-time feed
+        </div>
+        <p class="description">
+          Receive live updates on board activities like card creations, updates,
+          and member changes.
+        </p>
+      </div>
+
+      <div class="section">
+        <h2>Flow</h2>
+        <ol>
+          <li>Register or login to get an access token.</li>
+          <li>Create or join a board.</li>
+          <li>Add members to the board if needed.</li>
+          <li>Create, update, or delete cards in the board.</li>
+          <li>Connect to the WebSocket for real-time updates.</li>
+        </ol>
+      </div>
+
+      <p>
+        For detailed request/response schemas, refer to the interactive API docs
+        at <a href="/docs">/docs</a> or <a href="/redoc">/redoc</a>.
+      </p>
+    </div>
+  </body>
+</html>
