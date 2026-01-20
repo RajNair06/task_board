@@ -5,13 +5,12 @@ ENV PYTHONUNBUFFERED=1
 
 WORKDIR /app
 
-# Install system dependencies required for pip builds
 RUN apt-get update && apt-get install -y \
+    git \
     build-essential \
     gcc \
     libffi-dev \
     libssl-dev \
-    curl \
     && rm -rf /var/lib/apt/lists/*
 
 COPY requirements.txt .
