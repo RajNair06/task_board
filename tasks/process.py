@@ -12,23 +12,23 @@ class ActivityMessageBuilder:
     @staticmethod
     def build(audit:AuditLog,name:str):
         if audit.action==AuditAction.BOARD_CREATED:
-            return f"{name} created the board {audit.payload["name"]},description: {audit.payload["description"]}"
+            return f"{name} created the board {audit.payload['name']},description: {audit.payload['description']}"
         elif audit.action==AuditAction.BOARD_UPDATED:
-            return f"{name} updated the board title:'{audit.payload["old"]["name"]}',description '{audit.payload["old"]["description"]}' to '{audit.payload["new"]["name"]}',description {audit.payload["new"]["description"]}"
+            return f"{name} updated the board title:'{audit.payload['old']['name']}',description '{audit.payload['old']['description']}' to '{audit.payload['new']['name']}',description {audit.payload['new']['description']}"
         elif audit.action==AuditAction.BOARD_DELETED:
             return f"{name} deleted the board with id {audit.board_id}"
         elif audit.action==AuditAction.CARD_CREATED:
-            return f"{name} created the card with title:{audit.payload["title"]},description:{audit.payload["description"]}"
+            return f"{name} created the card with title:{audit.payload['title']},description:{audit.payload['description']}"
         elif audit.action==AuditAction.CARD_DELETED:
             return f"removed a card from board id {audit.board_id}"
         elif audit.action==AuditAction.CARD_UPDATED:
-            return f"{name} updated the card with title:{audit.payload["old"]["title"]},desc:{audit.payload["old"]["description"]},position:{audit.payload["old"]["position"]} to title:{audit.payload["new"]["title"]},desc:{audit.payload["new"]["description"]},position:{audit.payload["new"]["position"]}" 
+            return f"{name} updated the card with title:{audit.payload['old']['title']},desc:{audit.payload['old']['description']},position:{audit.payload['old']['position']} to title:{audit.payload['new']['title']},desc:{audit.payload['new']['description']},position:{audit.payload['new']['position']}" 
         elif audit.action==AuditAction.MEMBER_ADDED:
-            return f"{name} added a member to the board-{audit.payload["board_id"]} with user id {audit.payload["user_id"]} and role {audit.payload["role"]}"
+            return f"{name} added a member to the board-{audit.payload['board_id']} with user id {audit.payload['user_id']} and role {audit.payload['role']}"
         elif audit.action==AuditAction.MEMBER_REMOVED:
-            return f"{name} removed a member from the board-{audit.payload["board_id"]} with user id  {audit.payload["user_id"]}"
+            return f"{name} removed a member from the board-{audit.payload['board_id']} with user id  {audit.payload['user_id']}"
         elif audit.action==AuditAction.MEMBER_ROLE_CHANGED:
-            return f"{name} updated member role from board-{audit.payload["board_id"]} with user id {audit.payload["user_id"]} from role {audit.payload["old_role"]} to {audit.payload["new_role"]} "
+            return f"{name} updated member role from board-{audit.payload['board_id']} with user id {audit.payload['user_id']} from role {audit.payload['old_role']} to {audit.payload['new_role']} "
         
         return f"{name} performed an action"
 
