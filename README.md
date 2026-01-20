@@ -10,6 +10,8 @@ A FastAPI-based backend for a Trello-like real-time collaborative task board wit
 - ✅ Activity feed with Celery async task processing
 - ✅ Comprehensive unit tests covering auth, board, and card flows
 - ✅ Member management and board sharing
+- ✅ Docker containerization with Docker Compose
+- ✅ Home page documentation at `/`
 
 ## Features
 
@@ -41,7 +43,7 @@ A FastAPI-based backend for a Trello-like real-time collaborative task board wit
 - Secure WebSocket authentication with JWT tokens
 - Automatic broadcasting of activity feed updates to connected clients
 - Redis pub/sub integration for cross-instance event propagation
-- Broadcasting mechanism: Redis listener 
+- Broadcasting mechanism: Redis listener
 
 ### Audit & Activity Feed
 
@@ -53,11 +55,14 @@ A FastAPI-based backend for a Trello-like real-time collaborative task board wit
 ## Tech Stack
 
 - **Framework**: FastAPI 0.123
-- **Database**: SQLAlchemy ORM
-- **Task Queue**: Celery 5.6.2 with Redis
+- **Database**: SQLAlchemy ORM with SQLite
+- **Task Queue**: Celery 5.6.2 with RabbitMQ as broker and Redis as result backend
+- **Message Broker**: RabbitMQ 3-management
+
 - **Validation**: Pydantic 2.12
 - **Authentication**: python-jose, passlib
 - **Testing**: pytest
+- **Containerization**: Docker & Docker Compose
 - **API Security**: OAuth2 with JWT
 
 ## Project Structure
@@ -65,6 +70,9 @@ A FastAPI-based backend for a Trello-like real-time collaborative task board wit
 ```
 task_board/
 ├── main.py                 # FastAPI app and lifespan initialization
+├── Dockerfile              # Docker image definition
+├── docker-compose.yml      # Multi-service Docker setup
+├── requirements.txt        # Python dependencies
 ├── routers/               # API route definitions (auth, boards, cards, sockets)
 ├── commands/              # Command handlers for business logic operations
 ├── queries/               # Query handlers for data retrieval
@@ -72,18 +80,51 @@ task_board/
 ├── schemas/               # Pydantic models for request/response validation
 ├── utils/                 # Authentication, permissions, and connection utilities
 ├── tasks/                 # Celery async tasks and activity feed
-└── tests/                 # Comprehensive test suite
+├── templates/             # Jinja2 templates for home page
+├── tests/                 # Comprehensive test suite
+└── .dockerignore          # Docker build exclusions
 ```
 
 ## Getting Started
 
 ### Prerequisites
 
-- Python 3.8+
-- Redis (for Celery)
-- PostgreSQL (or SQLite for local development)
+- Docker and Docker Compose
 
-### Installation
+### Quick Start with Docker
+
+1. Clone the repository and navigate to the project directory.
+
+2. Run the application with Docker Compose:
+
+```bash
+docker-compose up --build
+```
+
+This will start:
+
+- **FastAPI App** at `http://localhost:8000`
+- **Celery Worker** for async tasks
+- **Redis** at `localhost:6379`
+- **RabbitMQ** at `localhost:5672` (management UI at `http://localhost:15672`, user: guest, pass: guest)
+
+3. Visit the home page at `http://localhost:8000` for API documentation and flow overview.
+
+### Live Deployment
+
+The application is deployed and available at: **https://task-board-viol.onrender.com**
+
+You can access the API documentation and home page there as well.
+
+### Manual Installation (Alternative)
+
+#### Prerequisites
+
+- Python 3.8+
+- Redis
+- RabbitMQ
+
+#### Installation
 
 1. Create and activate a virtual environment:
 
@@ -98,7 +139,7 @@ source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
-### Running the Application
+#### Running the Application
 
 ```bash
 uvicorn main:app --reload
@@ -106,7 +147,13 @@ uvicorn main:app --reload
 
 The API will be available at `http://localhost:8000`. OpenAPI docs at `/docs`.
 
-**Note**: Ensure Redis is running on localhost:6379 for real-time activity broadcasting to work correctly.
+**Note**: Ensure Redis and RabbitMQ are running for real-time activity broadcasting and Celery tasks to work correctly.
+
+#### Running Celery Worker (for activity feed)
+
+```bash
+celery -A tasks.celery_config worker --loglevel=info
+```
 
 ### Running Tests
 
@@ -114,13 +161,11 @@ The API will be available at `http://localhost:8000`. OpenAPI docs at `/docs`.
 python -m pytest
 ```
 
-### Running Celery Worker (for activity feed)
-
-```bash
-celery -A tasks.celery_config worker --loglevel=info
-```
-
 ## API Endpoints
+
+### Home Page
+
+- `GET /` — API documentation and flow overview (HTML page)
 
 ### Authentication
 
@@ -158,13 +203,11 @@ celery -A tasks.celery_config worker --loglevel=info
 
 ### Broadcasting Mechanisms
 
- **Redis Pub/Sub Listener**: Async listener that subscribes to `board:*` channels and broadcasts messages to connected WebSocket clients in real-time.
-
+**Redis Pub/Sub Listener**: Async listener that subscribes to `board:*` channels and broadcasts messages to connected WebSocket clients in real-time.
 
 ### Event Flow
 
 1. Action triggered (board/card creation, update, etc.)
-2. Celery task records audit log and activity feed entry
+2. Celery task (brokered by RabbitMQ) records audit log and activity feed entry
 3. Event published to Redis: `redis_client.publish(f"board:{board_id}", json.dumps(payload))`
 4. Redis listener receives and broadcasts to WebSocket clients
-
