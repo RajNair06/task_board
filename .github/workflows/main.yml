@@ -34,5 +34,6 @@ jobs:
         env:
           PYTHONPATH: .
           PYTHONWARNINGS: default
+          SECRET_KEY: ${{ secrets.SECRET_KEY }}
         run: |
           pytest -vv -s --tb=long --showlocals --maxfail=1
