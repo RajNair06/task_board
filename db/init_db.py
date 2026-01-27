@@ -1,8 +1,10 @@
 from .database import engine ,SessionLocal
 from .models import *
+import os
 
 def init_db():
-    Base.metadata.create_all(bind=engine)
+    if os.getenv('ENV') in ('local','test'):
+        Base.metadata.create_all(bind=engine)
 
 
 if __name__=="__main__":
