@@ -32,7 +32,10 @@ class BoardCommandHandler:
         board_id = board.id
         created_at = board.created_at
         updated_at = board.updated_at
-        record_activity.delay(actor_id=command.user_id,board_id=board.id,action=AuditAction.BOARD_CREATED,payload={"name":board.name,"description":board.description},)
+        try:
+            record_activity.delay(actor_id=command.user_id,board_id=board.id,action=AuditAction.BOARD_CREATED,payload={"name":board.name,"description":board.description},)
+        except Exception as e:
+            print("failed to dispatch activity task")
         return {
             "id": board_id,
             "name": command.name,
@@ -62,7 +65,11 @@ class BoardCommandHandler:
         created_by = board.created_by
         created_at = board.created_at
         updated_at = board.updated_at
-        record_activity.delay(actor_id=command.user_id,board_id=board.id,action=AuditAction.BOARD_UPDATED,payload={"old":{"name":old_name,"description":old_description},"new":{"name":board.name,"description":board.description},},)
+        try:
+            record_activity.delay(actor_id=command.user_id,board_id=board.id,action=AuditAction.BOARD_UPDATED,payload={"old":{"name":old_name,"description":old_description},"new":{"name":board.name,"description":board.description},},)
+        except Exception as e:
+            print("failed to dispatch activity task")
+
         return {
             "id": board_id,
             "name": name,
@@ -81,7 +88,11 @@ class BoardCommandHandler:
         name = board.name
         self.db.delete(board)
         self.db.commit()
-        record_activity.delay(actor_id=command.user_id,board_id=command.board_id,action=AuditAction.BOARD_DELETED,payload=None)
+        try:
+            record_activity.delay(actor_id=command.user_id,board_id=command.board_id,action=AuditAction.BOARD_DELETED,payload=None)
+        except Exception as e:
+            print("failed to dispatch activity task")
+
         return {"name": name}
 
 class CardCommandHandler:
@@ -112,13 +123,17 @@ class CardCommandHandler:
         card_id = card.id
         created_at = card.created_at
         updated_at = card.updated_at
-        record_activity.delay(actor_id=command.user_id,board_id=command.board_id,action=AuditAction.CARD_CREATED,payload={
-        "id": card.id,
-        "title": card.title,
-        "description": card.description,
-        "position": float(card.position),
-        "created_by": card.created_by
-    })
+        try:
+            record_activity.delay(actor_id=command.user_id,board_id=command.board_id,action=AuditAction.CARD_CREATED,payload={
+                "id": card.id,
+                "title": card.title,
+                "description": card.description,
+                "position": float(card.position),
+                "created_by": card.created_by
+            })
+        except Exception as e:
+            print("failed to dispatch activity task")
+
         return {
             "id": card_id,
             "title": command.title,
@@ -166,9 +181,12 @@ class CardCommandHandler:
         created_by = card.created_by
         created_at = card.created_at
         updated_at = card.updated_at
-        record_activity.delay(actor_id=command.user_id,board_id=command.board_id,action=AuditAction.CARD_UPDATED,payload={
-        "old":{"title":old_title,"description":old_description,"position":float(old_position)},"new":{"title":card.title,"description":card.description,"position":float(card.position)}
-    })
+        try:
+            record_activity.delay(actor_id=command.user_id,board_id=command.board_id,action=AuditAction.CARD_UPDATED,payload={
+                "old":{"title":old_title,"description":old_description,"position":float(old_position)},"new":{"title":card.title,"description":card.description,"position":float(card.position)}
+            })
+        except Exception as e:
+            print("failed to dispatch activity task")
         return {
             "id": card_id,
             "title": title,
@@ -199,7 +217,10 @@ class CardCommandHandler:
             )
         self.db.delete(card)
         self.db.commit()
-        record_activity.delay(actor_id=command.user_id,board_id=command.board_id,action=AuditAction.CARD_DELETED,payload=None)
+        try:
+            record_activity.delay(actor_id=command.user_id,board_id=command.board_id,action=AuditAction.CARD_DELETED,payload=None)
+        except Exception as e:
+            print("failed to dispatch activity task")
         return card
 
 
