@@ -1,24 +1,9 @@
-version: "3.8"
 
 services:
   redis:
     image: redis:alpine
     ports:
       - "6379:6379"
-
-  rabbitmq:
-    image: rabbitmq:3-management
-    ports:
-      - "5672:5672"
-      - "15672:15672"
-    healthcheck:
-      test: ["CMD","rabbitmq-diagnostics","-q","ping"]
-      interval: 5s
-      timeout: 5s
-      retries: 5
-    environment:
-      RABBITMQ_DEFAULT_USER: guest
-      RABBITMQ_DEFAULT_PASS: guest
 
   app:
     build: .
@@ -27,15 +12,13 @@ services:
     depends_on:
       redis:
         condition: service_started
-      rabbitmq:
-        condition: service_healthy
-
     environment:
-      CELERY_BROKER_URL: amqp://guest:guest@rabbitmq:5672//
-      CELERY_RESULT_BACKEND: redis://redis:6379/0
+      RUN_MIGRATIONS: "1"
+      CELERY_BROKER_URL: redis://redis:6379/0
+      CELERY_RESULT_BACKEND: redis://redis:6379/1
       REDIS_URL: redis://redis:6379/0
     volumes:
-      - ./db:/app/db # Persist SQLite database
+      - ./db:/app/db
 
   celery:
     build: .
@@ -43,11 +26,10 @@ services:
     depends_on:
       redis:
         condition: service_started
-      rabbitmq:
-        condition: service_healthy
     environment:
-      CELERY_BROKER_URL: amqp://guest:guest@rabbitmq:5672//
-      CELERY_RESULT_BACKEND: redis://redis:6379/0
+      RUN_MIGRATIONS: "0"
+      CELERY_BROKER_URL: redis://redis:6379/0
+      CELERY_RESULT_BACKEND: redis://redis:6379/1
       REDIS_URL: redis://redis:6379/0
     volumes:
-      - ./db:/app/db # Persist SQLite database
+      - ./db:/app/db

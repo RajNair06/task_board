@@ -1,9 +1,11 @@
 #!/bin/sh
 set -e
-echo "starting container.."
-mkdir -p /app/db
-echo "running db migrations"
-alembic -c db/alembic.ini upgrade head
-echo "starting app.."
-exec "$@"
+if [ "$RUN_MIGRATIONS" = "1" ]; then
+    echo "Running database migrations..."
+    cd /app/db
+    alembic upgrade head
+fi
 
+echo "Starting application..."
+cd /app
+exec "$@"
