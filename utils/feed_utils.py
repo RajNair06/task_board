@@ -52,7 +52,7 @@ async def activity_feed_dispatcher(manager):
         finally:
             db.close()
 
-REDIS_URL = os.getenv("REDIS_URL", "redis://localhost:6379/1")
+REDIS_URL = os.getenv("CELERY_RESULT_BACKEND", "redis://localhost:6379/1")
 
 async def redis_listener(manager):
      client=redis.from_url(REDIS_URL)
