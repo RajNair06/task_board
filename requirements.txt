@@ -34,6 +34,7 @@ packaging==25.0
 passlib==1.7.4
 pluggy==1.6.0
 prompt_toolkit==3.0.52
+psycopg2-binary==2.9.11
 pyasn1==0.6.1
 pydantic==2.12.5
 pydantic_core==2.41.5

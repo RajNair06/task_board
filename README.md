@@ -11,6 +11,9 @@ A FastAPI-based backend for a Trello-like real-time collaborative task board wit
 - ✅ Comprehensive unit tests covering auth, board, and card flows
 - ✅ Member management and board sharing
 - ✅ Docker containerization with Docker Compose
+- ✅ Database migrations with Alembic
+- ✅ Production-ready PostgreSQL database
+- ✅ Redis as the message broker
 - ✅ Home page documentation at `/`
 
 ## Features
@@ -43,7 +46,6 @@ A FastAPI-based backend for a Trello-like real-time collaborative task board wit
 - Secure WebSocket authentication with JWT tokens
 - Automatic broadcasting of activity feed updates to connected clients
 - Redis pub/sub integration for cross-instance event propagation
-- Broadcasting mechanism: Redis listener
 
 ### Audit & Activity Feed
 
@@ -55,15 +57,15 @@ A FastAPI-based backend for a Trello-like real-time collaborative task board wit
 ## Tech Stack
 
 - **Framework**: FastAPI 0.123
-- **Database**: SQLAlchemy ORM with SQLite
-- **Task Queue**: Celery 5.6.2 with RabbitMQ as broker and Redis as result backend
-- **Message Broker**: RabbitMQ 3-management
-
+- **Database**: PostgreSQL with SQLAlchemy ORM
+- **Task Queue**: Celery 5.6.2 with Redis as broker and result backend
+- **Message Broker**: Redis
 - **Validation**: Pydantic 2.12
 - **Authentication**: python-jose, passlib
 - **Testing**: pytest
 - **Containerization**: Docker & Docker Compose
 - **API Security**: OAuth2 with JWT
+- **Migrations**: Alembic
 
 ## Project Structure
 
@@ -106,7 +108,7 @@ This will start:
 - **FastAPI App** at `http://localhost:8000`
 - **Celery Worker** for async tasks
 - **Redis** at `localhost:6379`
-- **RabbitMQ** at `localhost:5672` (management UI at `http://localhost:15672`, user: guest, pass: guest)
+- **PostgreSQL** at `localhost:5432`
 
 3. Visit the home page at `http://localhost:8000` for API documentation and flow overview.
 
@@ -122,7 +124,7 @@ You can access the API documentation and home page there as well.
 
 - Python 3.8+
 - Redis
-- RabbitMQ
+- PostgreSQL
 
 #### Installation
 
@@ -147,7 +149,13 @@ uvicorn main:app --reload
 
 The API will be available at `http://localhost:8000`. OpenAPI docs at `/docs`.
 
-**Note**: Ensure Redis and RabbitMQ are running for real-time activity broadcasting and Celery tasks to work correctly.
+**Note**: Ensure Redis and PostgreSQL are running for real-time activity broadcasting and Celery tasks to work correctly.
+
+#### Running Alembic Migrations
+
+```bash
+alembic upgrade head
+```
 
 #### Running Celery Worker (for activity feed)
 
@@ -208,6 +216,5 @@ python -m pytest
 ### Event Flow
 
 1. Action triggered (board/card creation, update, etc.)
-2. Celery task (brokered by RabbitMQ) records audit log and activity feed entry
-3. Event published to Redis: `redis_client.publish(f"board:{board_id}", json.dumps(payload))`
-4. Redis listener receives and broadcasts to WebSocket clients
+2. Event published to Redis: `redis_client.publish(f"board:{board_id}", json.dumps(payload))`
+3. Redis listener receives and broadcasts to WebSocket clients
