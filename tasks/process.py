@@ -5,7 +5,7 @@ from .celery_config import celery_app
 import  redis
 import json
 
-redis_client = redis.from_url(os.getenv("REDIS_URL", "redis://localhost:6379/0"))
+redis_client = redis.from_url(os.getenv("CELERY_RESULT_BACKEND", "redis://localhost:6379/1"))
 
 
 class ActivityMessageBuilder:
